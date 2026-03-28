@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>코드 번역기 🔍</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d2e; --surface2:#242840; --border:#2e3250;
+  --accent:#5b8dee; --accent2:#a78bfa;
+  --green:#4ade80; --yellow:#fbbf24; --pink:#f472b6; --orange:#fb923c; --cyan:#22d3ee;
+  --text:#e2e8f0; --muted:#64748b; --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Nanum Gothic',sans-serif; min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 20%,rgba(91,141,238,.09) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 80%,rgba(167,139,250,.07) 0%,transparent 55%);
+}
+header{padding:26px 20px 0;text-align:center;}
+.logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;}
+.logo-icon{
+  width:42px;height:42px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:21px;box-shadow:0 0 22px rgba(91,141,238,.35);
+}
+h1{
+  font-size:23px;font-weight:800;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.subtitle{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;}
+.badge-green{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);}
+.badge-blue{background:rgba(91,141,238,.12);color:var(--accent);border:1px solid rgba(91,141,238,.3);}
+.badge-purple{background:rgba(167,139,250,.12);color:var(--accent2);border:1px solid rgba(167,139,250,.3);}
+.container{max-width:900px;margin:0 auto;padding:0 15px 50px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.card-title{font-size:13px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;}
+.lang-badge{font-size:11px;background:rgba(91,141,238,.15);color:var(--accent);border:1px solid rgba(91,141,238,.3);border-radius:20px;padding:2px 10px;transition:all .3s;}
+#codeInput{width:100%;min-height:175px;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.85;padding:15px;resize:vertical;tab-size:2;}
+#codeInput::placeholder{color:var(--muted);}
+.action-row{display:flex;gap:9px;padding:11px 15px;border-top:1px solid var(--border);background:var(--surface2);}
+.btn-main{flex:1;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:#fff;font-family:'Nanum Gothic',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-main:hover{opacity:.9;}
+.btn-main:active{transform:scale(.98);}
+.btn-sub{padding:11px 15px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nanum Gothic',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-sub:hover{border-color:var(--text);color:var(--text);}
+.tts-card{display:none;}
+.tts-card.on{display:block;animation:fadeUp .4s ease;}
+.tts-body{padding:14px 15px 15px;}
+.tts-script{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;font-size:13px;line-height:2;color:#b4c4dc;max-height:190px;overflow-y:auto;margin-bottom:13px;}
+.tts-line{display:block;padding:1px 4px;border-radius:4px;transition:background .2s,color .2s;}
+.tts-line.active{background:rgba(91,141,238,.2);color:#fff;}
+.tts-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.btn-play{flex:1;min-width:100px;padding:10px 16px;background:linear-gradient(135deg,var(--green),#22c55e);border:none;border-radius:8px;color:#0f1117;font-family:'Nanum Gothic',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-play:hover{opacity:.88;}
+.btn-play.playing{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-stop-tts{padding:10px 13px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nanum Gothic',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-stop-tts:hover{border-color:var(--pink);color:var(--pink);}
+.speed-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);width:100%;margin-top:9px;}
+.speed-row input[type=range]{flex:1;accent-color:var(--accent);}
+.speed-val{color:var(--accent);font-weight:700;min-width:34px;}
+.result-card{display:none;}
+.result-card.on{display:block;animation:fadeUp .4s ease;}
+.summary-box{padding:13px 15px;background:linear-gradient(135deg,rgba(91,141,238,.1),rgba(167,139,250,.08));border-bottom:1px solid var(--border);font-size:13px;line-height:1.75;color:#c4d0e8;}
+.summary-label{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.stats-row{display:flex;gap:7px;padding:11px 15px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.stat{flex:1;min-width:48px;text-align:center;background:var(--surface2);border-radius:8px;padding:7px 4px;}
+.stat-n{font-size:17px;font-weight:800;color:var(--accent);}
+.stat-l{font-size:10px;color:var(--muted);margin-top:1px;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead{background:var(--surface2);}
+th{padding:9px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);}
+th:first-child{width:36px;text-align:center;}
+th:nth-child(2){width:40%;}
+td{padding:9px 13px;border-bottom:1px solid rgba(46,50,80,.5);vertical-align:top;line-height:1.65;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(91,141,238,.04);}
+tr.hl td{background:rgba(91,141,238,.13)!important;transition:background .25s;}
+tr.hl .ccell{color:#93c5fd!important;}
+.lnum{text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.ccell{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);white-space:pre-wrap;word-break:break-all;}
+.empty-row .ccell{color:var(--muted);font-style:italic;}
+.dcell{color:var(--text);font-size:13px;}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-right:5px;vertical-align:middle;}
+.t-func{background:rgba(74,222,128,.15);color:var(--green);}
+.t-var{background:rgba(251,191,36,.15);color:var(--yellow);}
+.t-loop{background:rgba(167,139,250,.15);color:var(--accent2);}
+.t-cond{background:rgba(244,114,182,.15);color:var(--pink);}
+.t-html{background:rgba(251,146,60,.15);color:var(--orange);}
+.t-css{background:rgba(34,211,238,.15);color:var(--cyan);}
+.t-etc{background:rgba(100,116,139,.15);color:var(--muted);}
+.t-cmt{background:rgba(100,116,139,.1);color:#94a3b8;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔍</div>
+    <h1>코드 번역기</h1>
+  </div>
+  <p class="subtitle">코드를 한국어로 해석 + 소리로 읽어드립니다 · AI닷(AI DOT)</p>
+  <div class="badges">
+    <span class="badge badge-green">🟢 완전 오프라인</span>
+    <span class="badge badge-blue">🆓 완전 무료</span>
+    <span class="badge badge-purple">🔊 읽어주기 포함</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 코드 입력</span>
+      <span class="lang-badge" id="liveLang">언어 자동감지</span>
+    </div>
+    <textarea id="codeInput" oninput="onInput()" placeholder="여기에 코드를 붙여넣으세요...
+
+예시 (Python):
+def greet(name):
+    for i in range(3):
+        print('안녕하세요, ' + name)
+
+greet('오빠')"></textarea>
+    <div class="action-row">
+      <button class="btn-main" onclick="run()">🔍 번역하기</button>
+      <button class="btn-sub" onclick="reset()">초기화</button>
+    </div>
+  </div>
+
+  <div class="card tts-card" id="ttsCard">
+    <div class="card-header">
+      <span class="card-title">🔊 한국어로 읽어주기</span>
+      <span class="lang-badge" id="ttsStatus">준비됨</span>
+    </div>
+    <div class="tts-body">
+      <div class="tts-script" id="ttsScript"></div>
+      <div class="tts-row">
+        <button class="btn-play" id="playBtn" onclick="togglePlay()">▶ 전체 읽기</button>
+        <button class="btn-stop-tts" onclick="stopAll()">■ 정지</button>
+      </div>
+      <div class="speed-row">
+        🐢
+        <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.1" value="0.9" oninput="onRate(this)">
+        🐇
+        <span class="speed-val" id="rateVal">0.9×</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card result-card" id="resultCard">
+    <div class="card-header">
+      <span class="card-title">📖 줄별 번역 결과</span>
+      <span class="lang-badge" id="resultLang">-</span>
+    </div>
+    <div id="resultBody"></div>
+  </div>
+
+</div>
+
+<script>
+function detectLang(c){
+  if(/<(!DOCTYPE|html|head|body|div|span|img|ul|li|h[1-6]|p[ >]|a[ >])/i.test(c)) return 'HTML';
+  if(/\{[^}]*:[^}]*;/.test(c)&&/color:|font-|margin|padding|display:|background/.test(c)) return 'CSS';
+  if(/def |import |print\(|elif |range\(|__name__|\.append/.test(c)) return 'Python';
+  if(/function |const |let |var |console\.log|=>|document\.|window\./.test(c)) return 'JavaScript';
+  if(/public class|System\.out|void |String |@Override/.test(c)) return 'Java';
+  if(/#include|printf|scanf|cout|int main/.test(c)) return 'C/C++';
+  if(/SELECT|INSERT|FROM|WHERE/i.test(c)) return 'SQL';
+  if(/^\s*[$#]|echo |grep |sudo |chmod /m.test(c)) return 'Shell';
+  if(/func |guard |if let|\.swift/.test(c)) return 'Swift';
+  if(/fun |println\(|companion object/.test(c)) return 'Kotlin';
+  return '코드';
+}
+function onInput(){
+  const v=document.getElementById('codeInput').value;
+  document.getElementById('liveLang').textContent=v.trim().length>5?detectLang(v)+' 감지됨':'언어 자동감지';
+}
+const RULES={
+Python:[
+  {re:/^\s*#(.*)$/,tp:'cmt',fn:m=>`💬 주석: "${m[1].trim()}" — 실행 안 되는 설명글`},
+  {re:/^\s*def\s+(\w+)\s*\((.*?)\)/,tp:'func',fn:m=>`🔧 함수 정의: "${m[1]}" 기능을 만듭니다. 입력값: (${m[2]||'없음'})`},
+  {re:/^\s*class\s+(\w+)/,tp:'func',fn:m=>`🏗️ 클래스: "${m[1]}" 설계도(틀)를 만듭니다`},
+  {re:/^\s*for\s+(\w+)\s+in\s+(.+):/,tp:'loop',fn:m=>`🔄 반복: ${m[2]} 에서 "${m[1]}"을 하나씩 꺼내며 반복합니다`},
+  {re:/^\s*while\s+(.+):/,tp:'loop',fn:m=>`🔄 반복(while): "${m[1]}" 조건이 참인 동안 반복합니다`},
+  {re:/^\s*if\s+(.+):/,tp:'cond',fn:m=>`❓ 조건: "${m[1]}" 이 참이면 아래를 실행합니다`},
+  {re:/^\s*elif\s+(.+):/,tp:'cond',fn:m=>`❓ 추가조건: "${m[1]}" 이 참이면 실행합니다`},
+  {re:/^\s*else:/,tp:'cond',fn:()=>`❓ 나머지: 위 조건이 모두 거짓일 때 실행합니다`},
+  {re:/^\s*return\s+(.*)/,tp:'func',fn:m=>`📤 반환: "${m[1]||'없음'}" 값을 돌려줍니다`},
+  {re:/^\s*import\s+(\S+)/,tp:'etc',fn:m=>`📦 가져오기: "${m[1]}" 도구상자를 불러옵니다`},
+  {re:/^\s*from\s+(\S+)\s+import\s+(.+)/,tp:'etc',fn:m=>`📦 가져오기: "${m[1]}"에서 "${m[2]}" 불러옵니다`},
+  {re:/^\s*print\s*\((.+)\)/,tp:'etc',fn:m=>`🖨️ 출력: ${m[1]} 를 화면에 보여줍니다`},
+  {re:/^\s*(\w+)\s*=\s*\[/,tp:'var',fn:m=>`📋 변수: "${m[1]}" 에 목록(리스트)을 저장합니다`},
+  {re:/^\s*(\w+)\s*=\s*\{/,tp:'var',fn:m=>`📋 변수: "${m[1]}" 에 사전(딕셔너리)을 저장합니다`},
+  {re:/^\s*(\w+)\s*=\s*(.+)/,tp:'var',fn:m=>`📦 변수: "${m[1]}" 에 ${m[2]} 를 저장합니다`},
+  {re:/^\s*try:/,tp:'etc',fn:()=>`🛡️ 오류처리 시작: 오류 나도 프로그램이 멈추지 않게 합니다`},
+  {re:/^\s*except/,tp:'etc',fn:()=>`🛡️ 오류처리: 오류 발생 시 실행합니다`},
+  {re:/^\s*(\w+)\(.*?\)/,tp:'func',fn:m=>`▶️ 함수 실행: "${m[1]}" 기능을 실행합니다`},
+],
+JavaScript:[
+  {re:/^\s*\/\/(.*)/,tp:'cmt',fn:m=>`💬 주석: "${m[1].trim()}"`},
+  {re:/^\s*function\s+(\w+)\s*\((.*?)\)/,tp:'func',fn:m=>`🔧 함수: "${m[1]}" 기능을 만듭니다. 입력: (${m[2]||'없음'})`},
+  {re:/^\s*(const|let|var)\s+(\w+)\s*=\s*.*=>/,tp:'func',fn:m=>`🔧 화살표함수: "${m[2]}" 기능을 만듭니다`},
+  {re:/^\s*for\s*\(/,tp:'loop',fn:()=>`🔄 반복(for): 조건에 맞는 동안 반복합니다`},
+  {re:/\.(forEach|map|filter|reduce)\(/,tp:'loop',fn:()=>`🔄 배열반복: 목록의 각 항목을 처리합니다`},
+  {re:/^\s*while\s*\(/,tp:'loop',fn:()=>`🔄 반복(while): 조건이 참인 동안 반복합니다`},
+  {re:/^\s*if\s*\((.+)\)/,tp:'cond',fn:m=>`❓ 조건: "${m[1]}" 이 참이면 실행합니다`},
+  {re:/^\s*else if/,tp:'cond',fn:()=>`❓ 추가조건 확인`},
+  {re:/^\s*else\s*\{?$/,tp:'cond',fn:()=>`❓ 나머지: 위 조건이 모두 거짓일 때 실행합니다`},
+  {re:/^\s*const\s+(\w+)\s*=\s*(.+)/,tp:'var',fn:m=>`📦 상수: "${m[1]}" 에 ${m[2]} 저장 (변경불가)`},
+  {re:/^\s*let\s+(\w+)\s*=\s*(.+)/,tp:'var',fn:m=>`📦 변수: "${m[1]}" 에 ${m[2]} 저장 (변경가능)`},
+  {re:/^\s*var\s+(\w+)\s*=\s*(.+)/,tp:'var',fn:m=>`📦 변수: "${m[1]}" 에 ${m[2]} 저장`},
+  {re:/^\s*console\.log\((.+)\)/,tp:'etc',fn:m=>`🖨️ 출력: ${m[1]} 를 개발자 도구에 보여줍니다`},
+  {re:/document\.getElementById\(/,tp:'etc',fn:()=>`🎯 HTML 요소 찾기`},
+  {re:/\.addEventListener\((.+?),/,tp:'etc',fn:m=>`👂 이벤트 감지: ${m[1]} 발생 시 실행합니다`},
+  {re:/^\s*return\s+(.*)/,tp:'func',fn:m=>`📤 반환: "${m[1]||'없음'}" 값을 돌려줍니다`},
+  {re:/^\s*import\s+/,tp:'etc',fn:()=>`📦 가져오기: 다른 파일의 기능을 불러옵니다`},
+  {re:/^\s*export\s+/,tp:'etc',fn:()=>`📤 내보내기: 이 기능을 외부에 공개합니다`},
+  {re:/^\s*class\s+(\w+)/,tp:'func',fn:m=>`🏗️ 클래스: "${m[1]}" 설계도를 만듭니다`},
+],
+HTML:[
+  {re:/^\s*<!--(.*)-->/,tp:'cmt',fn:m=>`💬 주석: "${m[1].trim()}"`},
+  {re:/^\s*<!DOCTYPE/,tp:'html',fn:()=>`📄 문서선언: HTML5 문서임을 선언합니다`},
+  {re:/^\s*<html/,tp:'html',fn:()=>`🌐 HTML 시작: 웹페이지 전체를 감싸는 태그`},
+  {re:/^\s*<head/,tp:'html',fn:()=>`🧠 head: 페이지 설정 영역 (화면에 안 보임)`},
+  {re:/^\s*<body/,tp:'html',fn:()=>`📺 body: 화면에 실제로 보이는 영역`},
+  {re:/^\s*<title>(.+)<\/title>/,tp:'html',fn:m=>`🏷️ 제목: 브라우저 탭에 "${m[1]}" 표시`},
+  {re:/^\s*<meta/,tp:'html',fn:()=>`⚙️ 메타태그: 페이지 정보 설정`},
+  {re:/^\s*<link/,tp:'html',fn:()=>`🔗 링크: 외부 파일(CSS 등) 연결`},
+  {re:/^\s*<script/,tp:'html',fn:()=>`⚡ 스크립트: JavaScript 코드 영역`},
+  {re:/^\s*<style/,tp:'css',fn:()=>`🎨 스타일: CSS 디자인 코드 영역`},
+  {re:/^\s*<h([1-6]).*?>(.+)<\/h/,tp:'html',fn:m=>`📌 제목${m[1]}: "${m[2]}"`},
+  {re:/^\s*<p.*?>(.+)<\/p>/,tp:'html',fn:m=>`📝 문단: "${m[1]}"`},
+  {re:/^\s*<div/,tp:'html',fn:()=>`📦 div: 내용을 묶는 상자`},
+  {re:/^\s*<\/div>/,tp:'html',fn:()=>`📦 div 닫기`},
+  {re:/^\s*<a\s+href="(.+?)"/,tp:'html',fn:m=>`🔗 링크: "${m[1]}" 이동`},
+  {re:/^\s*<img\s+src="(.+?)"/,tp:'html',fn:m=>`🖼️ 이미지: "${m[1]}"`},
+  {re:/^\s*<button/,tp:'html',fn:()=>`🖱️ 버튼: 클릭 가능한 버튼`},
+  {re:/^\s*<input/,tp:'html',fn:()=>`📥 입력창: 사용자 입력 칸`},
+  {re:/^\s*<ul|^\s*<ol/,tp:'html',fn:()=>`📋 목록 시작`},
+  {re:/^\s*<li/,tp:'html',fn:()=>`• 목록 항목`},
+  {re:/^\s*<nav/,tp:'html',fn:()=>`🧭 네비게이션: 메뉴 영역`},
+  {re:/^\s*<header/,tp:'html',fn:()=>`🔝 헤더: 페이지 상단 영역`},
+  {re:/^\s*<footer/,tp:'html',fn:()=>`🔚 푸터: 페이지 하단 영역`},
+  {re:/^\s*<section/,tp:'html',fn:()=>`📑 섹션: 내용 구역`},
+  {re:/^\s*<\/\w+>/,tp:'html',fn:()=>`닫는 태그: 위 태그를 닫습니다`},
+],
+CSS:[
+  {re:/^\s*\/\*(.+)\*\//,tp:'cmt',fn:m=>`💬 주석: "${m[1].trim()}"`},
+  {re:/^\s*([\.\#]?[\w\-]+)\s*\{/,tp:'css',fn:m=>`🎯 선택자: "${m[1]}" 에 스타일 적용`},
+  {re:/^\s*color\s*:\s*(.+);/,tp:'css',fn:m=>`🎨 글자색: ${m[1]}`},
+  {re:/^\s*background[^:]*:\s*(.+);/,tp:'css',fn:m=>`🖼️ 배경: ${m[1]}`},
+  {re:/^\s*font-size\s*:\s*(.+);/,tp:'css',fn:m=>`🔤 글자크기: ${m[1]}`},
+  {re:/^\s*font-weight\s*:\s*(.+);/,tp:'css',fn:m=>`🔤 글자굵기: ${m[1]}`},
+  {re:/^\s*margin[^:]*:\s*(.+);/,tp:'css',fn:m=>`↔️ 바깥여백: ${m[1]}`},
+  {re:/^\s*padding[^:]*:\s*(.+);/,tp:'css',fn:m=>`↔️ 안쪽여백: ${m[1]}`},
+  {re:/^\s*width\s*:\s*(.+);/,tp:'css',fn:m=>`📏 너비: ${m[1]}`},
+  {re:/^\s*height\s*:\s*(.+);/,tp:'css',fn:m=>`📏 높이: ${m[1]}`},
+  {re:/^\s*display\s*:\s*(.+);/,tp:'css',fn:m=>`📦 표시방식: ${m[1]}`},
+  {re:/^\s*flex/,tp:'css',fn:()=>`📦 플렉스박스: 유연한 배치`},
+  {re:/^\s*border[^-].*:\s*(.+);/,tp:'css',fn:m=>`🔲 테두리: ${m[1]}`},
+  {re:/^\s*border-radius\s*:\s*(.+);/,tp:'css',fn:m=>`⭕ 모서리 둥글기: ${m[1]}`},
+  {re:/^\s*position\s*:\s*(.+);/,tp:'css',fn:m=>`📌 위치방식: ${m[1]}`},
+  {re:/^\s*\}/,tp:'css',fn:()=>`닫기: 스타일 적용 끝`},
+],
+};
+const COMMON=[
+  {re:/^\s*$/,tp:'empty',fn:()=>''},
+  {re:/^\s*[\}\]\)]+$/,tp:'etc',fn:()=>`닫는 괄호: 위 블록 끝`},
+  {re:/^\s*[\{\[\(]+$/,tp:'etc',fn:()=>`여는 괄호: 새 블록 시작`},
+];
+const TAG={
+  func:['t-func','함수'],var:['t-var','변수'],loop:['t-loop','반복'],
+  cond:['t-cond','조건'],html:['t-html','HTML'],css:['t-css','CSS'],
+  cmt:['t-cmt','주석'],etc:['t-etc','기타'],
+};
+const LANG_DESC={
+  Python:'Python(파이썬) 코드입니다. 읽기 쉽고 간결하며 AI·데이터·자동화에 많이 쓰입니다.',
+  JavaScript:'JavaScript(자바스크립트) 코드입니다. 웹페이지를 동적으로 만드는 언어입니다.',
+  HTML:'HTML 코드입니다. 웹페이지의 구조와 뼈대를 만드는 언어입니다.',
+  CSS:'CSS 코드입니다. 웹페이지의 색상·크기·위치 등 디자인을 담당합니다.',
+  Java:'Java(자바) 코드입니다. 안드로이드 앱·기업 서버에서 많이 쓰입니다.',
+  'C/C++':'C/C++ 코드입니다. 빠른 속도가 특징인 저수준 언어입니다.',
+  SQL:'SQL 코드입니다. 데이터베이스에서 데이터를 조회·관리하는 언어입니다.',
+  Shell:'Shell 스크립트입니다. 터미널에서 실행하는 자동화 명령어 모음입니다.',
+  Swift:'Swift 코드입니다. 애플 아이폰·맥 앱을 만드는 언어입니다.',
+  Kotlin:'Kotlin 코드입니다. 현대적인 안드로이드 앱 개발 언어입니다.',
+  '코드':'코드입니다.',
+};
+function makeSummary(lang,st,total){
+  const p=[];
+  if(st.func)p.push(`함수 ${st.func}개`);
+  if(st.var)p.push(`변수 ${st.var}개`);
+  if(st.loop)p.push(`반복문 ${st.loop}개`);
+  if(st.cond)p.push(`조건문 ${st.cond}개`);
+  if(st.cmt)p.push(`주석 ${st.cmt}개`);
+  let s=LANG_DESC[lang]||'코드입니다.';
+  s+=` 총 ${total}줄이며`;
+  s+=p.length?` ${p.join(', ')}가 포함되어 있습니다.`:' 실행 명령들로 이루어져 있습니다.';
+  return s;
+}
+let analyzed=[],summaryText='';
+function run(){
+  const code=document.getElementById('codeInput').value;
+  if(!code.trim()){alert('코드를 입력해주세요!');return;}
+  const lang=detectLang(code);
+  const rules=RULES[lang]||[];
+  const lines=code.split('\n');
+  const st={func:0,var:0,loop:0,cond:0,cmt:0,etc:0};
+  analyzed=lines.map((line,i)=>{
+    if(!line.trim())return{num:i+1,code:'(빈 줄)',desc:'',tp:'empty'};
+    for(const r of rules){const m=line.match(r.re);if(m){const t=r.tp;if(st[t]!==undefined)st[t]++;else st.etc++;return{num:i+1,code:line,desc:r.fn(m),tp:t};}}
+    for(const r of COMMON){const m=line.match(r.re);if(m)return{num:i+1,code:line,desc:r.fn(m),tp:r.tp};}
+    st.etc++;
+    return{num:i+1,code:line,desc:`${lang} 코드 한 줄입니다`,tp:'etc'};
+  });
+  summaryText=makeSummary(lang,st,lines.length);
+  document.getElementById('resultLang').textContent=lang;
+  let html=`<div class="summary-box"><div class="summary-label">📌 전체 요약</div>${summaryText}</div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-n">${lines.length}</div><div class="stat-l">전체</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--green)">${st.func}</div><div class="stat-l">함수</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--yellow)">${st.var}</div><div class="stat-l">변수</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--accent2)">${st.loop}</div><div class="stat-l">반복</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--pink)">${st.cond}</div><div class="stat-l">조건</div></div>
+      <div class="stat"><div class="stat-n" style="color:#94a3b8">${st.cmt}</div><div class="stat-l">주석</div></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>코드</th><th>한국어 해석</th></tr></thead><tbody>`;
+  analyzed.forEach(row=>{
+    const isEmpty=row.tp==='empty';
+    const[cls,lbl]=TAG[row.tp]||TAG.etc;
+    const tag=(isEmpty||!lbl)?'':`<span class="tag ${cls}">${lbl}</span>`;
+    html+=`<tr class="${isEmpty?'empty-row':''}"><td class="lnum">${row.num}</td><td class="ccell">${esc(row.code)}</td><td class="dcell">${tag}${esc(row.desc)}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('resultBody').innerHTML=html;
+  document.getElementById('resultCard').className='card result-card on';
+  initTTS();
+  document.getElementById('ttsCard').className='card tts-card on';
+  document.getElementById('ttsCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function reset(){
+  stopAll();
+  document.getElementById('codeInput').value='';
+  document.getElementById('liveLang').textContent='언어 자동감지';
+  document.getElementById('resultCard').className='card result-card';
+  document.getElementById('ttsCard').className='card tts-card';
+  analyzed=[];
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+let ttsLines=[],ttsIdx=0,ttsOn=false,ttsRate=0.9;
+
+// 텍스트를 한국어 토막 / 영어 토막으로 분리
+function splitLang(text){
+  // 이모지·특수기호 제거
+  text = text
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+    .replace(/["""''`↔️·:：]/g,' ')
+    .replace(/\s{2,}/g,' ').trim();
+
+  // 영어 단어 / 한국어 구절 교대로 분리
+  const segments=[];
+  // 영어(알파벳+숫자+_) 덩어리 vs 나머지
+  const parts = text.split(/([A-Za-z][A-Za-z0-9_]*(?:\s[A-Za-z][A-Za-z0-9_]*)*)/);
+  parts.forEach(p=>{
+    if(!p.trim()) return;
+    if(/^[A-Za-z][A-Za-z0-9_\s]*$/.test(p.trim())){
+      segments.push({lang:'en-US', text:p.trim()});
+    } else {
+      const kor = p.replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ.,!?]/g,' ').replace(/\s{2,}/g,' ').trim();
+      if(kor) segments.push({lang:'ko-KR', text:kor});
+    }
+  });
+  return segments;
+}
+
+// 여러 세그먼트를 순서대로 읽기
+function speakSegments(segs, onDone){
+  if(!segs||segs.length===0){onDone&&onDone();return;}
+  let i=0;
+  function next(){
+    if(!ttsOn||i>=segs.length){onDone&&onDone();return;}
+    const u=new SpeechSynthesisUtterance(segs[i].text);
+    u.lang=segs[i].lang;
+    u.rate=segs[i].lang==='en-US' ? Math.min(ttsRate, 0.85) : ttsRate; // 영어는 살짝 천천히
+    u.pitch=1.05;
+    u.onend=()=>{i++;next();};
+    u.onerror=()=>{i++;next();};
+    window.speechSynthesis.speak(u);
+  }
+  next();
+}
+
+function initTTS(){
+  ttsLines=[];
+
+  // 요약
+  ttsLines.push(summaryText
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+    .replace(/\s{2,}/g,' ').trim()
+  );
+  ttsLines.push('줄별 해석을 읽어드리겠습니다.');
+
+  analyzed.forEach(row=>{
+    if(row.tp==='empty'||!row.desc) return;
+    ttsLines.push(row.desc); // 원본 그대로 저장 (splitLang이 나중에 처리)
+  });
+
+  ttsLines.push('이상으로 읽기를 마칩니다.');
+  ttsIdx=0; ttsOn=false;
+
+  document.getElementById('ttsScript').innerHTML=ttsLines.map((t,i)=>{
+    // 표시용: 영어 단어를 파란색으로 하이라이트
+    const display=t
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+      .replace(/([A-Za-z][A-Za-z0-9_]*)/g,
+        '<span style="color:var(--accent);font-weight:700">$1</span>');
+    return `<span class="tts-line" id="tl${i}">${display}</span>`;
+  }).join('');
+
+  setPlayBtn(false);
+  document.getElementById('ttsStatus').textContent='준비됨 (🇰🇷한국어 + 🇺🇸영어 발음)';
+}
+
+// speakIdx를 세그먼트 방식으로 교체
+function speakIdx(i){
+  if(!ttsOn||i>=ttsLines.length){
+    ttsOn=false; setPlayBtn(false);
+    document.getElementById('playBtn').textContent='▶ 전체 읽기';
+    document.getElementById('ttsStatus').textContent='읽기 완료 ✅';
+    hlRow(-1); return;
+  }
+  ttsIdx=i;
+
+  // 스크립트 강조
+  document.querySelectorAll('.tts-line').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('tl'+i);
+  if(el){el.classList.add('active');el.scrollIntoView({block:'nearest'});}
+  hlRow(i);
+
+  document.getElementById('ttsStatus').textContent=`${i+1} / ${ttsLines.length} 읽는 중...`;
+
+  const segs=splitLang(ttsLines[i]);
+  speakSegments(segs, ()=>{ if(ttsOn) speakIdx(i+1); });
+}
+function togglePlay(){
+  if(!('speechSynthesis' in window)){alert('이 브라우저는 음성 읽기를 지원하지 않아요.\nChrome 또는 삼성 인터넷을 사용해보세요!');return;}
+  if(ttsOn)pauseTTS();else startTTS();
+}
+function startTTS(){if(!ttsLines.length)return;ttsOn=true;setPlayBtn(true);speakIdx(ttsIdx);}
+function pauseTTS(){window.speechSynthesis.cancel();ttsOn=false;setPlayBtn(false);document.getElementById('playBtn').textContent='▶ 이어 읽기';}
+function stopAll(){
+  window.speechSynthesis.cancel();ttsOn=false;ttsIdx=0;
+  setPlayBtn(false);
+  document.getElementById('playBtn').textContent='▶ 전체 읽기';
+  document.getElementById('ttsStatus').textContent='대기 중';
+  hlRow(-1);
+  document.querySelectorAll('.tts-line').forEach(el=>el.classList.remove('active'));
+}
+
+function hlRow(lineIdx){
+  document.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(lineIdx<2)return;
+  let cnt=0;
+  const rows=document.querySelectorAll('#resultBody tbody tr');
+  for(let r=0;r<analyzed.length;r++){
+    if(analyzed[r].tp==='empty'||!analyzed[r].desc)continue;
+    if(cnt===(lineIdx-2)){rows[r]&&rows[r].classList.add('hl');break;}
+    cnt++;
+  }
+}
+function setPlayBtn(playing){
+  const btn=document.getElementById('playBtn');
+  if(playing){btn.classList.add('playing');btn.textContent='⏸ 일시정지';}
+  else{btn.classList.remove('playing');}
+}
+function onRate(el){ttsRate=parseFloat(el.value);document.getElementById('rateVal').textContent=ttsRate.toFixed(1)+'×';}
+</script>
+</body>
+</html>
